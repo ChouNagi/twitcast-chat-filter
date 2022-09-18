@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Twitcast Chat Filter
 // @namespace    https://github.com/ChouNagi
-// @version      1.0.1
+// @version      1.0.2
 // @source       https://github.com/ChouNagi/twitcast-chat-filter
 // @description  Detects LiveTL in Twitcast comments, and displays them as subtitles or in a separate feed. Also allows filtering comments.
 // @match        http://twitcasting.tv/*
@@ -1109,6 +1109,8 @@
       subtitleOverlay.style.position = 'absolute';
       subtitleOverlay.style.width = '100%';
       subtitleOverlay.style.height = '100%';
+      subtitleOverlay.style.top = '0';
+      subtitleOverlay.style.left = '0';
       subtitleOverlay.style.boxSizing = 'border-box';
       subtitleOverlay.style.paddingBottom = '60px';
       subtitleOverlay.style.flexDirection = 'column-reverse';
@@ -1141,8 +1143,11 @@
       var maxDuration = getLineMaxDuration(comment.text);
 
       var startTimeToUse;
-      if(comment.videoTimeSeen != null && comment.videoTimePosted != null) {
-          startTimeToUse = (comment.videoTimePosted < (comment.videoTimeSeen - 3)) ? comment.videoTimePosted : comment.videoTimeSeen;
+      if(watchingLive && comment.videoTimeSeen != null && comment.videoTimePosted != null) {
+          startTimeToUse = (comment.videoTimePosted < (comment.videoTimeSeen - 12)) ? comment.videoTimePosted : comment.videoTimeSeen;
+      }
+      else if(comment.videoTimeSeen != null && comment.videoTimePosted != null) {
+          startTimeToUse = (comment.videoTimePosted < (comment.videoTimeSeen - 5)) ? comment.videoTimePosted : comment.videoTimeSeen;
       }
       else if(comment.videoTimePosted != null) {
         startTimeToUse = comment.videoTimePosted;
@@ -1288,8 +1293,17 @@
 
     var videoTimeElement = document.querySelector('#mainwrapper .vjs-current-time-display');
     var liveVideoTimeElement = document.getElementById('updatetimer');
+
+    if(liveVideoTimeElement) {
+      watchingLive = true;
+      watchingArchive = false;
+    }
+    else if(videoTimeElement) {
+      watchingLive = false;
+      watchingArchive = true;
+    }
     var videoTimeCheckInterval = window.setInterval(function() {
-    	if(videoTimeElement == null) {
+      if(videoTimeElement == null) {
       	videoTimeElement = document.querySelector('#mainwrapper .vjs-current-time-display');
       }
       if(videoStartTime == null || isNaN(videoStartTime)) {
@@ -1306,6 +1320,14 @@
       }
       if(videoTimeElement == null && liveVideoTimeElement == null) {
         return;
+      }
+      if(liveVideoTimeElement) {
+        watchingLive = true;
+        watchingArchive = false;
+      }
+      else if(videoTimeElement) {
+        watchingLive = false;
+        watchingArchive = true;
       }
       var videoTimeText = videoTimeElement ? videoTimeElement.textContent : liveVideoTimeElement.textContent;
       var timeMatch = (videoTimeText || '').match(TWITCAST_VIDEO_TIME_REGEX);
