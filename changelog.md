@@ -1,5 +1,9 @@
 # Change Log
 
+## Version 1.0.5
+
+Added support for Dark Mode
+
 ## Version 1.0.4
 
 Fixed issue with subtitles doubling up after stream restarts

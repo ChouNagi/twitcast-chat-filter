@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Twitcast Chat Filter
 // @namespace    https://github.com/ChouNagi
-// @version      1.0.4
+// @version      1.0.5
 // @source       https://github.com/ChouNagi/twitcast-chat-filter
 // @description  Detects LiveTL in Twitcast comments, and displays them as subtitles or in a separate feed. Also allows filtering comments.
 // @match        http://twitcasting.tv/*
@@ -791,6 +791,14 @@
 
       var css = '\n';
 
+      css += '.tcf-settings-panel-popup { background-color: #f4f4f4; border: 3px solid #888; }\n';
+      css += '.tcf-settings-panel-popup-close-button { background-color: #e4e4e4; }\n';
+      css += '.tcf-settings-panel-popup-close-button:hover { background-color: #dcdcdc; }\n';
+
+      css += 'html[data-theme="dark"] .tcf-settings-panel-popup { background-color: #111; border: 3px solid #333; }\n';
+      css += 'html[data-theme="dark"] .tcf-settings-panel-popup-close-button { background-color: #282828; }\n';
+      css += 'html[data-theme="dark"] .tcf-settings-panel-popup-close-button:hover { background-color: #222; }\n';
+
       if(settings.showSubtitles) {
         css += '.twitcast-chat-filter-subtitle-overlay { display: flex; }';
         css += '.twitcast-chat-filter-subtitle-author { display: flex; align-items: center; }';
@@ -811,6 +819,10 @@
         css += '.tcf-separate-translation-feed-line-author-image { width: 12px; height: 12px; border-radius: 50%; margin: 0px 2px -2px 0px; opacity: 0.875; }\n';
         css += '.tcf-separate-translation-feed-line-author-name { font-size: 11px; color: #888; margin-right: 4px; }\n';
         css += '.tcf-separate-translation-feed-line-text { display: inline; font-size: 13px; color: #222; }\n';
+        css += 'html[data-theme="dark"] .tcf-separate-translation-feed-line { background-color: #303438; }\n';
+        css += 'html[data-theme="dark"] .tcf-separate-translation-feed-line-time { color: #eee; }\n';
+        css += 'html[data-theme="dark"] .tcf-separate-translation-feed-line-author-name { color: #777; }\n';
+        css += 'html[data-theme="dark"] .tcf-separate-translation-feed-line-text { color: #ccc; }\n';
       }
       else {
         css += '.tcf-separate-translation-feed { display: none; }\n';
@@ -821,6 +833,7 @@
       }
       else if(settings.translationCommentVisibility == 'emphasise') {
         css += '.tcf-translation-comment { display: flex; background-color: #fff4d8; font-weight: bold; color: #222; }\n';
+        css += 'html[data-theme="dark"] .tcf-translation-comment { background-color: #303438; color: #eee; }\n';
       }
       else {
         css += '.tcf-translation-comment { display: flex; }\n';
@@ -860,7 +873,7 @@
       settingsPanelOverlay.style.left = '0px';
       settingsPanelOverlay.style.right = '0px';
       settingsPanelOverlay.style.bottom = '0px';
-      settingsPanelOverlay.style.backgroundColor = 'rgba(0,0,0,0.4)';
+      settingsPanelOverlay.style.backgroundColor = 'rgba(50,50,50,0.4)';
       settingsPanelOverlay.style.display = 'flex';
       settingsPanelOverlay.style.alignItems = 'center';
       settingsPanelOverlay.style.justifyContent = 'center';
@@ -868,8 +881,7 @@
       settingsPanelOverlay.style.transition = 'opacity 0.25s linear';
 
       settingsPanelPopup = document.createElement('DIV');
-      settingsPanelPopup.style.backgroundColor = '#f4f4f4';
-      settingsPanelPopup.style.border = '3px solid #888';
+      settingsPanelPopup.className = 'tcf-settings-panel-popup';
       settingsPanelPopup.style.width = '400px';
       settingsPanelPopup.style.maxWidth = 'calc(100% - 40px)';
       settingsPanelOverlay.appendChild(settingsPanelPopup);
@@ -891,11 +903,11 @@
       settingsPanelHeader.appendChild(settingsPanelTitle);
 
       settingsPanelCloseButton = document.createElement('DIV');
+      settingsPanelCloseButton.className = 'tcf-settings-panel-popup-close-button';
       settingsPanelCloseButton.textContent = 'X';
       settingsPanelCloseButton.style.fontWeight = 'bold';
       settingsPanelCloseButton.style.fontSize = '1rem';
       settingsPanelCloseButton.style.padding = '6px 12px';
-      settingsPanelCloseButton.style.backgroundColor = '#e4e4e4';
       settingsPanelCloseButton.style.cursor = 'pointer';
       settingsPanelCloseButton.style.userSelect = 'none';
       settingsPanelCloseButton.style.mozUserSelect = 'none';
