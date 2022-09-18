@@ -7,7 +7,15 @@ It provides several features, many of them aimed at live translation support, an
 
 These include: Subtitles, Translation Comment Feed, Translation Comment Emphasis, and Chat Filtering.
 
+![Twitcast Chat Filter in action](twitcast-chat-filter-in-action.png)
+
 ## Features
+
+![Twitcast Chat Filter Settings](twitcast-chat-filter-settings.png)
+
+### Settings Panel
+
+The settings panel is accessed via a button above the chat feed.
 
 ### Language Support
 
@@ -17,10 +25,6 @@ You can change the language via a dropdown in the settings.
 The interface presently supports 8 languages: Bahasa Indonesian, Chinese, Dutch, English, German, Portuguese, Japanese, Spanish
 
 Note: There is no automatic translation of detected translation comments to other languages. The language only affects the interface.
-
-### Settings Panel
-
-The settings panel is accessed via a button above the chat feed.
 
 ### Translation Comments
 
