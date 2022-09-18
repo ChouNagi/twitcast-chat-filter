@@ -29,7 +29,7 @@ Note: There is no automatic translation of detected translation comments to othe
 ### Translation Comments
 
 Translation Comment detection is accomplished via regex checks of the message content, and direct comparison of twitcast usernames.
-You can customise exactly what it's searching for in.
+You can customise exactly what it's searching for.
 
 Note: Since the square bracket characters which are often used to designate the language in live translations have special meaning in regexes, they must be escaped with a preceding backslash like so: `\[EN\]`
 
