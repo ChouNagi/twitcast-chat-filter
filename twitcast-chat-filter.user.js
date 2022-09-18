@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Twitcast Chat Filter
 // @namespace    https://github.com/ChouNagi
-// @version      1.0.3
+// @version      1.0.4
 // @source       https://github.com/ChouNagi/twitcast-chat-filter
 // @description  Detects LiveTL in Twitcast comments, and displays them as subtitles or in a separate feed. Also allows filtering comments.
 // @match        http://twitcasting.tv/*
@@ -25,7 +25,8 @@
 
 (function() {
 
-  if((window.location + '').indexOf('mwebanimation.php?m=1') != -1) {
+  var allowedPageRegex = /^https?:\/\/(?:(?:en|ja)\.)?twitcasting.tv\/[^\/]+(?:\/movie\/\d+)$/
+  if(!allowedPageRegex.test(window.location.origin + '' + window.location.pathname)) {
     return;
   }
 
@@ -79,9 +80,10 @@
     var authors = { };
 
     var videoStartTime = null;
+    var firstVideoStartTime = null;
     var lastVideoTime = null;
 
-  	var lastVideoTimeOffsetForComment = 0;
+    var currentVideoNumber = 0;
 
     var parseComment = function(element, live) {
 
@@ -206,6 +208,7 @@
       comment.text = commentText;
       comment.author = user;
       comment.dateSeen = now;
+      comment.videoNumber = currentVideoNumber;
       if(lastVideoTime != null) {
       	comment.videoTimeSeen = lastVideoTime;
       }
@@ -1121,11 +1124,11 @@
 
     var getLineAdjustedLength = function( text ) {
       // counts Kanji/Hanzi as 2.5 letters, and kana as 1.5, spaces and punctuation as 0.1, and everything else as 1
-      return (Array.prototype.slice.call(text || '').map(function(c) {
+      var adjustedLength = Array.prototype.slice.call(text || '').map(function(c) {
           if(/[\u4e00-\u9faf]/.test(c)) {
               return 2.5;
           }
-          if(/\s|.|,|。|、/.test(c)) {
+          if(/\s|\.|,|。|、/.test(c)) {
               return 0.1;
           }
           if(/[\u3040-\u30ff]/.test(c)) {
@@ -1134,7 +1137,9 @@
           return 1;
       }).reduce(function(sum, value) {
           return sum + value;
-      }, 0) + 0.5) | 0;
+      }, 0);
+      debugLog(text + ' = ' + adjustedLength);
+      return adjustedLength;
     }
 
     var getLineMinDuration = function( text ) {
@@ -1155,6 +1160,8 @@
     var generateSubtitle = function(comment) {
 
       var subtitleId = comment.id;
+
+      var videoNumber = comment.videoNumber || 0;
 
       var estimatedDuration = getLineEstimatedDuration(comment.text);
       var minDuration = getLineMinDuration(comment.text);
@@ -1182,7 +1189,8 @@
         subtitle = {
           id: subtitleId,
           comment: comment,
-          start:   startTimeToUse
+          start:   startTimeToUse,
+          videoNumber: videoNumber
         }
         subtitle_map[subtitleId] = subtitle;
         if (subtitle_array.length == 0) {
@@ -1192,6 +1200,14 @@
         else {
           var inserted = false;
           for(var i=0; i<subtitle_array.length; i++) {
+            if(subtitle_array[i].videoNumber < videoNumber) {
+              continue;
+            }
+            if(subtitle_array[i].videoNumber > videoNumber) {
+              subtitle_array.splice(i, 0, subtitle);
+              inserted = true;
+              break;
+            }
             if(subtitle_array[i].start > subtitle.start) {
               subtitle_array.splice(i, 0, subtitle);
               inserted = true;
@@ -1209,7 +1225,7 @@
       var next_subtitle = subtitle_array[subtitle_array_index + 1] || null;
       var prev_subtitle = subtitle_array[subtitle_array_index - 1] || null;
 
-      if(next_subtitle) {
+      if(next_subtitle && subtitle.videoNumber == next_subtitle.videoNumber) {
         var end;
         if((subtitle.start + maxDuration) > next_subtitle.start) {
           end = next_subtitle.start;
@@ -1226,7 +1242,7 @@
         subtitle.end = subtitle.start + estimatedDuration;
       }
 
-      if(prev_subtitle) {
+      if(prev_subtitle && subtitle.videoNumber == prev_subtitle.videoNumber) {
         var prevEstimatedDuration = getLineEstimatedDuration(prev_subtitle.comment.text);
         var prevMinDuration = getLineMinDuration(prev_subtitle.comment.text);
         var prevMaxDuration = getLineMaxDuration(prev_subtitle.comment.text);
@@ -1248,7 +1264,9 @@
       var subtitleEndTimeRoundedUp = (subtitle.end == (subtitle.end | 0)) ? subtitle.end : (subtitle.end + 1);
 
       if(settings.showSubtitles) {
-        if(subtitleStartTimeRoundedDown <= lastVideoTime && lastVideoTime < subtitleEndTimeRoundedUp) {
+        if(subtitle.videoNumber == currentVideoNumber
+           && subtitleStartTimeRoundedDown <= lastVideoTime
+           && lastVideoTime < subtitleEndTimeRoundedUp) {
           renderSubtitle(subtitle);
         }
       }
@@ -1259,6 +1277,10 @@
 
       if(subtitleOverlay == null || subtitleOverlay.parentNode != videoPlayerWrapper) {
       	createSubtitleOverlay();
+      }
+
+      if(subtitle.videoNumber != currentVideoNumber) {
+        return;
       }
 
       var subtitleId = 'twitcast-chat-filter-subtitle_' + subtitle.id;
@@ -1334,10 +1356,13 @@
       	liveVideoTimeElement = document.getElementById('updatetimer');
       }
       if((videoStartTime == null || isNaN(videoStartTime)) && liveVideoTimeElement && liveVideoTimeElement.hasAttribute('data-started-at')) {
-      	 videoStartTime = liveVideoTimeElement.getAttribute('data-started-at') * 1;
+      	videoStartTime = liveVideoTimeElement.getAttribute('data-started-at') * 1;
       }
       if(videoTimeElement == null && liveVideoTimeElement == null) {
         return;
+      }
+      if(firstVideoStartTime == null && videoStartTime != null) {
+        firstVideoStartTime = videoStartTime;
       }
       if(liveVideoTimeElement) {
         watchingLive = true;
@@ -1362,6 +1387,13 @@
       debugLog('video time: ' + currentVideoTime);
 
       if(previousVideoTime > currentVideoTime || (currentVideoTime > (previousVideoTime + 3))) {
+
+        if(watchingLive && (previousVideoTime > currentVideoTime)) {
+          // a new stream has started
+          currentVideoNumber += 1;
+          videoStartTime = ((new Date().getTime() / 1000) | 0) - currentVideoTime;
+        }
+
         seen_comment_ids = { };
         if(translationFeed != null) {
           translationFeed.innerHTML = '';

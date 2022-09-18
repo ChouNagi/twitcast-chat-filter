@@ -59,7 +59,10 @@ You can enter regexes (one per line) in the chat filter regex textarea to match 
 Or you can enter usernames in the other textarea, and any comments by those users will be hidden, regardless of content.
 
 Note: Translation comments are exempt from the message content regex filtering, but are affected by the username check.
-This means translations may be about the streamer talking about topics you're uncomfortable with, but you won't see translations by users you blacklist. If you wish to exclude things from the translations that are detected, you'll need to edit the translation detection regex to include a negative lookahead. For example:
+This means translations may be about the streamer talking about topics you're uncomfortable with, but you won't see translations by users you blacklist. If you wish to exclude things from the translations that are detected, you'll need to edit the translation detection regex to include a negative lookahead.
+
+For example, to exclude translations which contain the text `(DeepL)` case insensitive:
+
 `\[(?:EN|en)\](?:(?!\([Dd][Ee][Ee][Pp][Ll]\)).)+$`
 
 
