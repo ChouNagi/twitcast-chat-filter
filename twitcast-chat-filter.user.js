@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Twitcast Chat Filter
 // @namespace    https://github.com/ChouNagi
-// @version      1.0.2
+// @version      1.0.3
 // @source       https://github.com/ChouNagi/twitcast-chat-filter
 // @description  Detects LiveTL in Twitcast comments, and displays them as subtitles or in a separate feed. Also allows filtering comments.
 // @match        http://twitcasting.tv/*
@@ -1119,16 +1119,34 @@
     }
 
 
+    var getLineAdjustedLength = function( text ) {
+      // counts Kanji/Hanzi as 2.5 letters, and kana as 1.5, spaces and punctuation as 0.1, and everything else as 1
+      return (Array.prototype.slice.call(text || '').map(function(c) {
+          if(/[\u4e00-\u9faf]/.test(c)) {
+              return 2.5;
+          }
+          if(/\s|.|,|。|、/.test(c)) {
+              return 0.1;
+          }
+          if(/[\u3040-\u30ff]/.test(c)) {
+              return 1.5;
+          }
+          return 1;
+      }).reduce(function(sum, value) {
+          return sum + value;
+      }, 0) + 0.5) | 0;
+    }
+
     var getLineMinDuration = function( text ) {
-      return Math.max(0.75, 0.25 + text.length/14)
+      return Math.max(0.75, 0.25 + getLineAdjustedLength(text)/14)
     }
 
     var getLineEstimatedDuration = function( text ) {
-      return Math.max(1, 0.25 + text.length/11)
+      return Math.max(1, 0.25 + getLineAdjustedLength(text)/11)
     }
 
     var getLineMaxDuration = function( text ) {
-      return Math.max(1.25, 0.25 + text.length/8)
+      return Math.max(1.25, 0.25 + getLineAdjustedLength(text)/8)
     }
 
     var subtitle_array = [ ];
